@@ -20,7 +20,7 @@
 
 -define(SERVER, ?MODULE).
 
--record(eschat_web_srv_state, {}).
+-record(eschat_web_srv_state, {id}).
 
 %%%===================================================================
 %%% API
@@ -73,9 +73,9 @@ handle_cast(_Request, State = #eschat_web_srv_state{}) ->
   {noreply, NewState :: #eschat_web_srv_state{}} |
   {noreply, NewState :: #eschat_web_srv_state{}, timeout() | hibernate} |
   {stop, Reason :: term(), NewState :: #eschat_web_srv_state{}}).
-handle_info(restart, State = #eschat_web_srv_state{}) ->
-  restart(),
-  {noreply, State};
+handle_info(restart, #eschat_web_srv_state{id = Id} = State) ->
+  NewId = restart(Id),
+  {noreply, State#eschat_web_srv_state{id = NewId}};
 handle_info(_Info, State = #eschat_web_srv_state{}) ->
   {noreply, State}.
 
@@ -101,16 +101,58 @@ code_change(_OldVsn, State = #eschat_web_srv_state{}, _Extra) ->
 %%% Internal functions
 %%%===================================================================
 
-
-restart() ->
+restart(undefined) ->
   Rotes = [
     {'_', [
-      {"/api/:vsn/user/:action[/:id]", eschat_user_h,     []},
-      {"/api/:vsn/chat[/:id]",         eschat_chat_h,     []},
-      {'_',                            eschat_notfound_h, []}
+      eschat_user_h:dispatch(),
+      eschat_chat_h:dispatch(),
+      eschat_notfound_h:dispatch()
     ]}
   ],
   Dispatch = cowboy_router:compile(Rotes),
-  Settings = [{port, 8998}],
-  Status = cowboy:start_clear(?MODULE, Settings, #{env => #{dispatch => Dispatch}}),
-  lager:info("Web server ~p -> ~p : ~p",[?MODULE, Status, Settings]).
+  TransportOpts = #{
+    connection_type => supervisor,
+    handshake_timeout => 2000,
+    max_connections => 65536,
+%%    logger => module(),
+    num_acceptors => 64,
+    shutdown => 10000,
+    socket_opts => [{port, 8998}]
+  },
+  ProtoOpts = #{
+    env => #{dispatch => Dispatch},
+    active_n => 128,
+    chunked => true,
+    compress_buffering => true,
+    compress_threshold => 1024,
+    connection_type => supervisor,
+    http10_keepalive => true,
+    idle_timeout => 5000,
+    inactivity_timeout => 4000,
+    initial_stream_flow_size => 128,
+    linger_timeout => 1000,
+    max_keepalive => 16836,
+    middlewares => [
+      eschat_cookie_mw:name(),
+      eschat_parser_mw:name(),
+      cowboy_router,
+      eschat_validator_mw:name(),
+      cowboy_handler,
+      eschat_serializer_mw:name()
+    ],
+    request_timeout => 3000,
+    sendfile => true,
+    shutdown_timeout => 4500,
+    stream_handlers => [
+%%      cowboy_metrics_h,
+%%      cowboy_tracer_h,
+      cowboy_compress_h,
+      cowboy_stream_h
+    ]
+  },
+  Status = cowboy:start_clear(?MODULE, TransportOpts, ProtoOpts),
+  lager:info("Web server ~p -> ~p : ~p",[?MODULE, Status, TransportOpts]),
+  lager:info("Ranch info ~p", [ranch:info()]);
+restart(Id) ->
+  cowboy:stop_listener(Id),
+  restart(undefined).

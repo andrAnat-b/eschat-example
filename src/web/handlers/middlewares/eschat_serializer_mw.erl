@@ -4,22 +4,18 @@
 %%% @doc
 %%%
 %%% @end
-%%% Created : 18. Jan 2025 1:29 pm
+%%% Created : 06. Feb 2025 1:50 pm
 %%%-------------------------------------------------------------------
--module(eschat_notfound_h).
+-module(eschat_serializer_mw).
 -author("student").
--behavior(cowboy_handler).
+-behavior(cowboy_middleware).
 %% API
 -export([name/0]).
--export([dispatch/0]).
-
--export([init/2]).
+-export([execute/2]).
 
 name() -> ?MODULE.
 
-dispatch() ->
-  {'_', name(), #{}}.
-
-
-init(Req, Env) ->
-  {ok, cowboy_req:reply(404, #{}, <<"PAGE NOT FOUND">>, Req), Env}.
+execute(Req, Env) ->
+  lager:debug("Serializer Req ~p", [Req]),
+  lager:debug("Serializer Env ~p", [Env]),
+  {ok, Req, Env}.

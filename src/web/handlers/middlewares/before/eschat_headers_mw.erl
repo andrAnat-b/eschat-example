@@ -4,22 +4,17 @@
 %%% @doc
 %%%
 %%% @end
-%%% Created : 18. Jan 2025 1:29 pm
+%%% Created : 02. Feb 2025 1:00 am
 %%%-------------------------------------------------------------------
--module(eschat_notfound_h).
+-module(eschat_headers_mw).
 -author("student").
--behavior(cowboy_handler).
+-behavior(cowboy_middleware).
 %% API
 -export([name/0]).
--export([dispatch/0]).
 
--export([init/2]).
+-export([execute/2]).
 
 name() -> ?MODULE.
 
-dispatch() ->
-  {'_', name(), #{}}.
-
-
-init(Req, Env) ->
-  {ok, cowboy_req:reply(404, #{}, <<"PAGE NOT FOUND">>, Req), Env}.
+execute(Req, Env) ->
+  {ok, Req, Env}.

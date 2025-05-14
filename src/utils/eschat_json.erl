@@ -14,7 +14,7 @@
 -export([decode/1]).
 
 encode(JEterms) ->
-  jsone:encode(JEterms, []).
+  jsone:encode(JEterms, [undefined_as_null]).
 
 decode(JBin) ->
   jsone:decode(JBin, []).

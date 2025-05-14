@@ -16,7 +16,8 @@ dep_sherlock = git https://github.com/andranat-b/sherlock 	master
 
 REL_DEPS += relx
 
-ERLC_OPTS += '+{parse_transform, lager_transform}'
+ERLC_OPTS += +'{parse_transform, lager_transform}'
+ERLC_OPTS += +'{lager_truncation_size, 65535}'
 ERLC_OPTS += '+inline'
 
 include erlang.mk

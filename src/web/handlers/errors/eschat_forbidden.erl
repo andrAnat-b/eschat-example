@@ -4,22 +4,14 @@
 %%% @doc
 %%%
 %%% @end
-%%% Created : 18. Jan 2025 1:29 pm
+%%% Created : 18. Jan 2025 1:31 pm
 %%%-------------------------------------------------------------------
--module(eschat_notfound_h).
+-module(eschat_forbidden).
 -author("student").
 -behavior(cowboy_handler).
 %% API
--export([name/0]).
--export([dispatch/0]).
-
 -export([init/2]).
 
-name() -> ?MODULE.
 
-dispatch() ->
-  {'_', name(), #{}}.
-
-
-init(Req, Env) ->
-  {ok, cowboy_req:reply(404, #{}, <<"PAGE NOT FOUND">>, Req), Env}.
+init(Req, _) ->
+  cowboy_req:reply(403, #{}, <<"ACCESS DENIED">>, Req).
